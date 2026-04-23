@@ -4,6 +4,10 @@
 #include <userver/utils/datetime.hpp>
 #include <fmt/format.h>
 
+
+
+
+
 namespace storage {
 
 using namespace userver::storages::mongodb;
@@ -31,6 +35,7 @@ int FitnessStorage::RegisterUser(const std::string& login, const std::string& fi
     ));
     return id;
 }
+
 
 std::optional<User> FitnessStorage::FindUserByLogin(const std::string& login) const {
     auto doc = client_->GetCollection("users").FindOne(MakeObj("login", login));
@@ -64,6 +69,7 @@ std::vector<User> FitnessStorage::SearchUsersByMask(const std::string& mask) con
     return result;
 }
 
+#додел
 int FitnessStorage::CreateExercise(const Exercise& ex) {
     int id = GetNextId("exercise_id");
     client_->GetCollection("exercises").Insert(MakeObj(
@@ -158,6 +164,8 @@ std::vector<Workout> FitnessStorage::GetUserWorkouts(int user_id, int limit, int
     return result;
 }
 
+
+#додел
 Statistics FitnessStorage::GetWorkoutStats(int user_id, const std::string& date_from, const std::string& date_to) const {
     auto pipeline = MakeArray(
         MakeObj("$match", MakeObj("user_id", user_id, "date", MakeObj("$gte", date_from, "$lte", date_to))),
@@ -180,4 +188,4 @@ Statistics FitnessStorage::GetWorkoutStats(int user_id, const std::string& date_
     return stats;
 }
 
-} // namespace storage
+}

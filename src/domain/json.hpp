@@ -19,4 +19,4 @@ userver::formats::json::Value SerializeWorkout(const storage::Workout& w);
 
 userver::formats::json::Value SerializeStats(const storage::Statistics& stats);
 
-} // namespace domain::json
+}

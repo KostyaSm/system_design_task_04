@@ -23,4 +23,4 @@ private:
     RecipeStorage& storage_;
 };
 
-}  // namespace recipe_service
+}

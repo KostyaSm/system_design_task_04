@@ -13,4 +13,4 @@ public:
     void Handle(userver::server::http::HttpRequest& request, userver::server::request::RequestContext& ctx) const override;
 };
 
-} // namespace middlewares
+}

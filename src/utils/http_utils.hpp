@@ -8,4 +8,4 @@ namespace utils {
 std::optional<int> ParseOptionalInt(const std::string& str);
 bool IsValidEmail(const std::string& email);
 
-} // namespace utils
+}

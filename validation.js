@@ -43,7 +43,7 @@ try {
     user_id: 1,
     exercises: [{ exercise_id: 1, exercise_name: "Тест", sets: 1, reps: 1, order: 0 }]
   });
-  print("ОШИБКА: Валидация не сработала");
+  print("Валидация не сработала");
 } catch (e) {
   print("УСПЕХ: Валидация отклонила документ без обязательного поля date");
 }
@@ -55,7 +55,7 @@ try {
     date: new Date(),
     exercises: [{ exercise_id: 1, exercise_name: "Тест", sets: 1, reps: 1, weight_kg: -50, order: 0 }]
   });
-  print("ОШИБКА: Валидация пропустила отрицательный вес");
+  print("Валидация пропустила отрицательный вес");
 } catch (e) {
-  print("УСПЕХ: Валидация отклонила отрицательный вес");
+  print("Успез");
 }

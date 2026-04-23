@@ -93,4 +93,4 @@ userver::formats::json::Value ExerciseListHandler::HandleRequestJson(
     return result.ExtractValue();
 }
 
-} // namespace handlers
+}

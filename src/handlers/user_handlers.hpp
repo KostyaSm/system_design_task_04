@@ -25,4 +25,4 @@ private:
     storage::FitnessStorage* storage_;
 };
 
-} // namespace handlers
+}

@@ -12,4 +12,4 @@ inline std::string ToLower(std::string str) {
     return str;
 }
 
-} // namespace utils
+}

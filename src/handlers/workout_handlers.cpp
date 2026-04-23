@@ -171,4 +171,4 @@ userver::formats::json::Value WorkoutsStatsHandler::HandleRequestJson(
     return result.ExtractValue();
 }
 
-} // namespace handlers
+}

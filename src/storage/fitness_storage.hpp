@@ -1,9 +1,9 @@
 #pragma once
-
 #include <userver/storages/mongodb/client.hpp>
 #include <string>
 #include <vector>
 #include <optional>
+
 
 namespace storage {
 
@@ -15,7 +15,6 @@ struct User {
     std::optional<std::string> email;
     std::string password_hash;
 };
-
 struct Exercise {
     int id;
     std::string name;
@@ -78,4 +77,4 @@ private:
     int GetNextId(const std::string& counter_name);
 };
 
-} // namespace storage
+}

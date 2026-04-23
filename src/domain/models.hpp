@@ -20,6 +20,7 @@ struct Recipe {
     std::vector<Ingredient> ingredients;
 };
 
+
 struct User {
     int id{};
     std::string login;
@@ -29,4 +30,4 @@ struct User {
     std::unordered_set<int> favorite_recipe_ids;
 };
 
-}  // namespace recipe_service
+}

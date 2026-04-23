@@ -9,8 +9,13 @@
 #include "handlers/user_handlers.hpp"
 #include "handlers/exercise_handlers.hpp"
 #include "handlers/workout_handlers.hpp"
+
+
 #include "middlewares/auth_middleware.hpp"
 #include "storage/fitness_storage.hpp"
+
+
+
 
 int main(int argc, char* argv[]) {
     auto component_list = userver::components::MinimalServerComponentList()

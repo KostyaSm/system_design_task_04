@@ -15,6 +15,7 @@ async def test_register_user(service_client, mongodb):
     assert data['login'] == 'new_user'
     assert 'id' in data
 
+
 @pytest.mark.userver_fixture
 async def test_register_duplicate_login(service_client, mongodb):
     await mongodb.users.insert_one({
@@ -56,6 +57,8 @@ async def test_login_invalid_password(service_client, mongodb):
     })
     assert response.status_code == 401
 
+
+#додел
 @pytest.mark.userver_fixture
 async def test_user_by_login(service_client, mongodb):
     await mongodb.users.insert_one({
@@ -114,6 +117,7 @@ async def test_list_exercises(service_client, mongodb):
     assert len(data['exercises']) >= 1
     assert all(ex['category'] == 'strength' for ex in data['exercises'])
 
+ 
 @pytest.mark.userver_fixture
 async def test_create_workout(service_client, mongodb):
     await mongodb.users.insert_one({'id': 1, 'login': 'wuser', 'first_name': 'W', 'last_name': 'U', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'})
@@ -132,7 +136,7 @@ async def test_create_workout(service_client, mongodb):
     data = response.json()
     assert data['title'] == 'Morning workout'
     assert 'id' in data
-
+ 
 @pytest.mark.userver_fixture
 async def test_add_exercise_to_workout(service_client, mongodb):
     await mongodb.users.insert_one({'id': 1, 'login': 'wuser', 'first_name': 'W', 'last_name': 'U', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'})

@@ -4,7 +4,7 @@
 namespace domain::json {
 
 using namespace userver::formats::json;
-
+ 
 storage::User ParseUser(const Value& json) {
     storage::User u;
     u.id = json.HasMember("id") ? json["id"].As<int>() : 0;
@@ -20,6 +20,7 @@ storage::User ParseUser(const Value& json) {
     return u;
 }
 
+
 Value SerializeUser(const storage::User& user) {
     ValueBuilder vb{Object};
     vb["id"] = user.id;
@@ -29,7 +30,7 @@ Value SerializeUser(const storage::User& user) {
     vb["email"] = user.email.value_or("");
     return vb.ExtractValue();
 }
-
+    
 storage::Exercise ParseExercise(const Value& json) {
     storage::Exercise ex;
     ex.id = json.HasMember("id") ? json["id"].As<int>() : 0;
@@ -62,6 +63,8 @@ Value SerializeExercise(const storage::Exercise& ex) {
     vb["muscle_groups"] = mg_builder.ExtractValue();
     return vb.ExtractValue();
 }
+
+
 
 storage::WorkoutExercise ParseWorkoutExercise(const Value& json) {
     storage::WorkoutExercise ex;
@@ -128,4 +131,4 @@ Value SerializeStats(const storage::Statistics& stats) {
     return vb.ExtractValue();
 }
 
-} // namespace domain::json
+}

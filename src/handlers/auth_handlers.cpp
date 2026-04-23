@@ -7,7 +7,6 @@
 #include "../utils/http_utils.hpp"
 
 namespace handlers {
-
 AuthRegisterHandler::AuthRegisterHandler(const userver::components::ComponentConfig& config,
                                          const userver::components::ComponentContext& context)
     : userver::server::handlers::BaseJson(config, context) {
@@ -72,4 +71,7 @@ userver::formats::json::Value AuthLoginHandler::HandleRequestJson(
     return result.ExtractValue();
 }
 
-} // namespace handlers
+
+
+
+}

@@ -36,4 +36,4 @@ void AuthMiddleware::Handle(userver::server::http::HttpRequest& request, userver
     }
 }
 
-} // namespace middlewares
+}

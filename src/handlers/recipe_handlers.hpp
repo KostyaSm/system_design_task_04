@@ -31,6 +31,8 @@ public:
     ) const override;
 };
 
+ 
+
 class AddIngredientHandler final : public StorageAwareHandler {
 public:
     static constexpr std::string_view kName = "handler-add-ingredient";
@@ -91,4 +93,4 @@ public:
     ) const override;
 };
 
-}  // namespace recipe_service
+}

@@ -13,6 +13,7 @@ UserByLoginHandler::UserByLoginHandler(const userver::components::ComponentConfi
     storage_ = &context.FindComponent<storage::FitnessStorage>();
 }
 
+
 userver::formats::json::Value UserByLoginHandler::HandleRequestJson(
     const userver::server::http::HttpRequest& request,
     const userver::formats::json::Value&,
@@ -54,6 +55,7 @@ userver::formats::json::Value UserSearchHandler::HandleRequestJson(
         throw userver::server::handlers::HttpException(400, "Missing 'mask' query parameter");
     }
 
+
     std::string mask = std::string(*mask_opt);
     auto users = storage_->SearchUsersByMask(mask);
     
@@ -73,4 +75,4 @@ userver::formats::json::Value UserSearchHandler::HandleRequestJson(
     return result.ExtractValue();
 }
 
-} // namespace handlers
+}

@@ -2,6 +2,7 @@ import pytest
 
 pytest_plugins = ['pytest_userver.plugins.mongo']
 
+#додел 
 MONGO_COLLECTIONS = {
     'users': {
         'settings': {

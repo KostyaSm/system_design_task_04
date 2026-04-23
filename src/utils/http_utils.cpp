@@ -15,4 +15,4 @@ bool IsValidEmail(const std::string& email) {
     return std::regex_match(email, pattern);
 }
 
-} // namespace utils
+}
