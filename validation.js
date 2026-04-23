@@ -35,7 +35,7 @@ db.createCollection("workouts", {
   validationAction: "error"
 });
 
-print("Валидация для коллекции workouts создана");
+print("Создана");
 
 try {
   db.workouts.insertOne({
@@ -45,7 +45,7 @@ try {
   });
   print("Валидация не сработала");
 } catch (e) {
-  print("УСПЕХ: Валидация отклонила документ без обязательного поля date");
+  print("+");
 }
 
 try {
@@ -55,7 +55,7 @@ try {
     date: new Date(),
     exercises: [{ exercise_id: 1, exercise_name: "Тест", sets: 1, reps: 1, weight_kg: -50, order: 0 }]
   });
-  print("Валидация пропустила отрицательный вес");
+  print("-");
 } catch (e) {
   print("Успез");
 }

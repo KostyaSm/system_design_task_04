@@ -13,7 +13,7 @@ Workout - Конкретная тренировка пользователя    
 
 # Структура коллекций MongoDB
 
-### Коллекция `users`
+# Коллекция `users`
 
 ```javascript
 {
@@ -47,9 +47,7 @@ db.users.createIndex({ email: 1 }, { unique: true, sparse: true })
 db.users.createIndex({ first_name_lc: 1, last_name_lc: 1 })  #по маске
 ```
 
----
-
-### Коллекция `exercises`
+# Коллекция `exercises`
 
 ```javascript
 {

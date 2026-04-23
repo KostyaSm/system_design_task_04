@@ -24,7 +24,9 @@ int main(int argc, char* argv[]) {
         .Append<userver::server::handlers::TestsControl>()
         .Append<userver::clients::http::Component>()
         .Append<userver::clients::dns::Component>()
+
         .Append<storage::FitnessStorage>("fitness-storage")
+
         .Append<handlers::AuthRegisterHandler>("handler-auth-register")
         .Append<handlers::AuthLoginHandler>("handler-auth-login")
         .Append<handlers::UserByLoginHandler>("handler-user-by-login")
@@ -35,6 +37,7 @@ int main(int argc, char* argv[]) {
         .Append<handlers::WorkoutAddExerciseHandler>("handler-workout-add-exercise")
         .Append<handlers::UserWorkoutsHandler>("handler-user-workouts")
         .Append<handlers::WorkoutsStatsHandler>("handler-workouts-stats")
+        
         .Append<middlewares::AuthMiddleware>("auth-middleware");
 
     return userver::utils::DaemonMain(argc, argv, component_list);

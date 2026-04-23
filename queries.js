@@ -141,7 +141,7 @@ const stats = db.workouts.aggregate([
   { $sort: { total_volume_kg: -1 } }
 ]).toArray();
 
-print("\n📊 Статистика по объему (кг) за 2024 год:");
+print("\nСтатистика по объему (кг) за 2024 год:");
 stats.forEach(s => print(`   • ${s.exercise_name}: ${s.total_volume_kg} кг (ср. вес: ${s.avg_weight_per_set} кг)`));
 
 print("\nВсе запросы выполнены");

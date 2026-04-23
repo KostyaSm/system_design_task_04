@@ -1,6 +1,6 @@
 const db = db.getSiblingDB('fitness_tracker');
 
-// Создание коллекций с валидацией
+
 db.createCollection("users", {
   validator: {
     $jsonSchema: {
@@ -69,4 +69,4 @@ db.users.createIndex({ login: 1 }, { unique: true });
 db.exercises.createIndex({ name: 1 }, { unique: true });
 db.workouts.createIndex({ user_id: 1, date: -1 });
 
-print("✅ DB schema created");
+print("+");

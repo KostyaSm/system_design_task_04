@@ -43,4 +43,4 @@ db.users.insertMany(users);
 db.exercises.insertMany(exercises);
 db.workouts.insertMany(workouts);
 
-print("Seed data loaded");
+print("loaded");
