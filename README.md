@@ -3,14 +3,14 @@
 
 Сервис для управления пользователями, упражнениями и тренировками. Реализован на C++20 с использованием фреймворка userver и базы данных MongoDB.
 
-## 📦 Технологический стек
+## Технологический стек
 - **Язык:** C++20
 - **Фреймворк:** userver (Yandex)
 - **База данных:** MongoDB 7
 - **Контейнеризация:** Docker / Docker Compose
 - **Сборка:** CMake 3.16+
 
-## 🚀 Запуск проекта
+## Запуск проекта
 
 ```bash
 docker compose up --build
@@ -22,7 +22,7 @@ docker compose up --build
 
 Тестовый пароль для всех пользователей: `test123`
 
-## 📋 API Endpoints
+## API Endpoints
 
 ### Auth
 - `POST /api/v1/auth/register` — регистрация
@@ -42,7 +42,7 @@ docker compose up --build
 - `GET /api/v1/users/me/workouts?limit=20&offset=0` — история тренировок
 - `GET /api/v1/workouts/statistics?from=YYYY-MM-DD&to=YYYY-MM-DD` — статистика
 
-## 🗄️ Документная модель MongoDB
+## Документная модель MongoDB
 Подробное описание структуры коллекций и обоснование выбора Embedded/References см. в `schema_design.md`.
 
 ### Основные коллекции:
@@ -51,13 +51,13 @@ docker compose up --build
 - `workouts` — тренировки с встроенным массивом выполненных упражнений
 - `counters` — техническая коллекция для генерации числовых ID
 
-## 🧪 Тестирование
+## Тестирование
 Проект включает интеграционные тесты на Python (pytest).
 ```bash
 pytest tests/
 ```
 
-## 📁 Структура проекта
+## Структура проекта
 ```
 .
 ├── configs/              # Конфигурация userver
