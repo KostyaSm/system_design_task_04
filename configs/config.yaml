@@ -1,0 +1,63 @@
+components_manager:
+  components:
+    http-server:
+      listener-port: 8080
+      task_processor: main-task-processor
+      log-level: info
+    tests-control:
+      path: /tests/{action}
+      method: POST
+      task_processor: tests-task-processor
+    ping:
+      path: /ping
+      method: GET
+    handler-auth-register:
+      path: /api/v1/auth/register
+      method: POST
+      task_processor: main-task-processor
+    handler-user-by-login:
+      path: /api/v1/users/by-login
+      method: GET
+      task_processor: main-task-processor
+    handler-user-search:
+      path: /api/v1/users/search
+      method: GET
+      task_processor: main-task-processor
+    handler-exercises-create:
+      path: /api/v1/exercises
+      method: POST
+      task_processor: main-task-processor
+    handler-exercises-list:
+      path: /api/v1/exercises
+      method: GET
+      task_processor: main-task-processor
+    handler-workouts-create:
+      path: /api/v1/workouts
+      method: POST
+      task_processor: main-task-processor
+    handler-workout-add-exercise:
+      path: /api/v1/workouts/{id}/exercises
+      method: POST
+      task_processor: main-task-processor
+    handler-user-workouts:
+      path: /api/v1/users/me/workouts
+      method: GET
+      task_processor: main-task-processor
+    handler-workouts-stats:
+      path: /api/v1/workouts/statistics
+      method: GET
+      task_processor: main-task-processor
+    mongodb:
+      connection-pool-min-size: 10
+      connection-pool-max-size: 100
+      connect-timeout: 5s
+      dns-resolver: async
+    config:
+      fallback-path: configs/dynamic_config_fallback.json
+      updates-interval: 5s
+  default_task_processor: main-task-processor
+  task_processors:
+    main-task-processor:
+      worker_threads: 4
+    tests-task-processor:
+      worker_threads: 1
