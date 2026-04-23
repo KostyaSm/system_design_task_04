@@ -1,3 +1,4 @@
+
 #include "workout_handlers.hpp"
 #include <userver/server/handlers/base_json.hpp>
 #include <userver/server/handlers/http_exceptions.hpp>
@@ -6,6 +7,8 @@
 #include "../storage/fitness_storage.hpp"
 #include <string>
 #include <vector>
+ 
+#define DEFAULT_USER_ID 1
 
 namespace handlers {
 
@@ -20,41 +23,59 @@ userver::formats::json::Value WorkoutCreateHandler::HandleRequestJson(
     const userver::formats::json::Value& json,
     userver::server::request::RequestContext&) const {
     
-    int user_id = 1; 
-    if (auto uid = request.GetArg("user_id")) user_id = std::stoi(std::string(*uid));
+        
+    int user_id = DEFAULT_USER_ID; 
+    if (auto uid = request.GetArg("user_id")) {
+        try {
+            user_id = std::stoi(std::string(*uid));
+        } catch (...) {
+        }
+    }
 
     storage::Workout workout;
     workout.user_id = user_id;
+    
+    
     workout.title = json["title"].As<std::string>();
-    workout.date_iso = json["date"].As<std::string>();
+    workout.date_iso = json["date"].As<std::string>(); // FIXME: проверить формат даты
 
-    if (json.HasMember("duration_seconds") && !json["duration_seconds"].IsNull()) {
+    if (json.HasMember("duration_seconds") && !json["duration_seconds"].IsNull())
         workout.duration_seconds = json["duration_seconds"].As<int>();
-    }
+    
     if (json.HasMember("notes") && !json["notes"].IsNull()) {
         workout.notes = json["notes"].As<std::string>();
     }
-
+    
+    
     if (json.HasMember("exercises") && !json["exercises"].IsNull()) {
         for (const auto& ex_json : json["exercises"]) {
             storage::WorkoutExercise ex;
             ex.exercise_id = ex_json["exercise_id"].As<int>();
             ex.exercise_name = ex_json["exercise_name"].As<std::string>();
             ex.order = ex_json["order"].As<int>();
-            if (ex_json.HasMember("sets") && !ex_json["sets"].IsNull()) ex.sets = ex_json["sets"].As<int>();
-            if (ex_json.HasMember("reps") && !ex_json["reps"].IsNull()) ex.reps = ex_json["reps"].As<int>();
-            if (ex_json.HasMember("weight_kg") && !ex_json["weight_kg"].IsNull()) ex.weight_kg = ex_json["weight_kg"].As<double>();
-            if (ex_json.HasMember("duration_seconds") && !ex_json["duration_seconds"].IsNull()) ex.duration_seconds = ex_json["duration_seconds"].As<int>();
+
+            
+            if (ex_json.HasMember("sets") && !ex_json["sets"].IsNull()) 
+                ex.sets = ex_json["sets"].As<int>();
+            if (ex_json.HasMember("reps") && !ex_json["reps"].IsNull())
+                ex.reps = ex_json["reps"].As<int>();
+
+            if (ex_json.HasMember("weight_kg") && !ex_json["weight_kg"].IsNull()) 
+                ex.weight_kg = ex_json["weight_kg"].As<double>();
+            if (ex_json.HasMember("duration_seconds") && !ex_json["duration_seconds"].IsNull()) 
+                ex.duration_seconds = ex_json["duration_seconds"].As<int>();
+                
             workout.exercises.push_back(ex);
         }
     }
 
     int workout_id = storage_->CreateWorkout(workout);
-
+ 
     auto result = userver::formats::json::Builder{};
     result["id"] = workout_id;
     result["title"] = workout.title;
     result["user_id"] = user_id;
+    
     return result.ExtractValue();
 }
 
@@ -69,6 +90,7 @@ userver::formats::json::Value WorkoutAddExerciseHandler::HandleRequestJson(
     const userver::formats::json::Value& json,
     userver::server::request::RequestContext&) const {
     
+    // берём id тренировки из пути /workouts/{id}/exercises
     int workout_id = std::stoi(request.GetPathArg("id"));
 
     storage::WorkoutExercise ex;
@@ -79,16 +101,19 @@ userver::formats::json::Value WorkoutAddExerciseHandler::HandleRequestJson(
     if (json.HasMember("sets") && !json["sets"].IsNull()) ex.sets = json["sets"].As<int>();
     if (json.HasMember("reps") && !json["reps"].IsNull()) ex.reps = json["reps"].As<int>();
     if (json.HasMember("weight_kg") && !json["weight_kg"].IsNull()) ex.weight_kg = json["weight_kg"].As<double>();
-    if (json.HasMember("duration_seconds") && !json["duration_seconds"].IsNull()) ex.duration_seconds = json["duration_seconds"].As<int>();
+    if (json.HasMember("duration_seconds") && !json["duration_seconds"].IsNull()) 
+        ex.duration_seconds = json["duration_seconds"].As<int>();
+
 
     if (!storage_->AddExerciseToWorkout(workout_id, ex)) {
         throw userver::server::handlers::HttpException(404, "Workout not found");
     }
 
     auto result = userver::formats::json::Builder{};
-    result["status"] = "success";
+    result["status"] = "success"; // можно было бы вернуть обновлённую тренировку
     return result.ExtractValue();
 }
+
 
 UserWorkoutsHandler::UserWorkoutsHandler(const userver::components::ComponentConfig& config,
                                          const userver::components::ComponentContext& context)
@@ -101,35 +126,42 @@ userver::formats::json::Value UserWorkoutsHandler::HandleRequestJson(
     const userver::formats::json::Value&,
     userver::server::request::RequestContext&) const {
     
-    int user_id = 1;
-    if (auto uid = request.GetArg("user_id")) user_id = std::stoi(std::string(*uid));
+    int user_id = DEFAULT_USER_ID;
+    if (auto uid = request.GetArg("user_id")) 
+        user_id = std::stoi(std::string(*uid));
 
-    int limit = 20;
-    int offset = 0;
+   
+    int limit = 20, offset = 0;
     if (auto l = request.GetArg("limit")) limit = std::stoi(std::string(*l));
     if (auto o = request.GetArg("offset")) offset = std::stoi(std::string(*o));
 
     auto workouts = storage_->GetUserWorkouts(user_id, limit, offset);
-
+ 
     auto arr = userver::formats::json::Array{};
     for (const auto& w : workouts) {
         auto obj = userver::formats::json::Builder{};
         obj["id"] = w.id;
         obj["title"] = w.title;
         obj["date"] = w.date_iso;
+        
+        
         if (w.duration_seconds) obj["duration_seconds"] = *w.duration_seconds;
         if (w.notes) obj["notes"] = *w.notes;
 
+        
         auto ex_arr = userver::formats::json::Array{};
         for (const auto& e : w.exercises) {
             auto e_obj = userver::formats::json::Builder{};
             e_obj["exercise_id"] = e.exercise_id;
             e_obj["exercise_name"] = e.exercise_name;
+            
+            
             if (e.sets) e_obj["sets"] = *e.sets;
             if (e.reps) e_obj["reps"] = *e.reps;
             if (e.weight_kg) e_obj["weight_kg"] = *e.weight_kg;
             if (e.duration_seconds) e_obj["duration_seconds"] = *e.duration_seconds;
-            e_obj["order"] = e.order;
+            
+            e_obj["order"] = e.order; // порядок выполнения
             ex_arr.PushBack(e_obj.ExtractValue());
         }
         obj["exercises"] = std::move(ex_arr);
@@ -140,6 +172,9 @@ userver::formats::json::Value UserWorkoutsHandler::HandleRequestJson(
     result["workouts"] = std::move(arr);
     return result.ExtractValue();
 }
+
+
+
 
 WorkoutsStatsHandler::WorkoutsStatsHandler(const userver::components::ComponentConfig& config,
                                            const userver::components::ComponentContext& context)
@@ -152,8 +187,9 @@ userver::formats::json::Value WorkoutsStatsHandler::HandleRequestJson(
     const userver::formats::json::Value&,
     userver::server::request::RequestContext&) const {
     
-    int user_id = 1;
-    if (auto uid = request.GetArg("user_id")) user_id = std::stoi(std::string(*uid));
+    int user_id = DEFAULT_USER_ID;
+    if (auto uid = request.GetArg("user_id")) 
+        user_id = std::stoi(std::string(*uid));
 
     auto from_opt = request.GetArg("from");
     auto to_opt = request.GetArg("to");
@@ -166,8 +202,9 @@ userver::formats::json::Value WorkoutsStatsHandler::HandleRequestJson(
     auto result = userver::formats::json::Builder{};
     result["total_workouts"] = stats.total_workouts;
     result["total_duration_minutes"] = stats.total_duration_minutes;
-    result["total_volume_kg"] = stats.total_volume_kg;
+    result["total_volume_kg"] = stats.total_volume_kg;  // общий поднятый вес
     result["exercises_completed"] = stats.exercises_completed;
+    
     return result.ExtractValue();
 }
 
