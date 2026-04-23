@@ -1,49 +1,72 @@
-use('recipe_service');
+const db = db.getSiblingDB('fitness_tracker');
 
-const recipeValidator = {
-  $jsonSchema: {
-    bsonType: 'object',
-    required: ['id', 'author_id', 'title', 'title_lc', 'description', 'ingredients', 'created_at', 'updated_at'],
-    additionalProperties: true,
-    properties: {
-      _id: {},
-      id: { bsonType: 'int', minimum: 1 },
-      author_id: { bsonType: 'int', minimum: 1 },
-      title: { bsonType: 'string', minLength: 2, maxLength: 200 },
-      title_lc: { bsonType: 'string', minLength: 2, maxLength: 200 },
-      description: { bsonType: 'string', minLength: 3, maxLength: 5000 },
-      created_at: { bsonType: 'date' },
-      updated_at: { bsonType: 'date' },
-      ingredients: {
-        bsonType: 'array',
-        items: {
-          bsonType: 'object',
-          required: ['id', 'name', 'amount'],
-          properties: {
-            id: { bsonType: 'int', minimum: 1 },
-            name: { bsonType: 'string', minLength: 1, maxLength: 200 },
-            amount: { bsonType: 'string', minLength: 1, maxLength: 100 },
-            created_at: { bsonType: ['date', 'null'] }
+// Создание коллекций с валидацией
+db.createCollection("users", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["id", "login", "first_name", "last_name", "password_hash"],
+      properties: {
+        id: { bsonType: "int" },
+        login: { bsonType: "string" },
+        password_hash: { bsonType: "string" }
+      }
+    }
+  }
+});
+
+db.createCollection("exercises", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["id", "name", "category", "difficulty", "created_by"],
+      properties: {
+        id: { bsonType: "int" },
+        name: { bsonType: "string" },
+        category: { bsonType: "string", enum: ["strength", "cardio", "flexibility", "hiit"] },
+        difficulty: { bsonType: "string", enum: ["beginner", "intermediate", "advanced"] }
+      }
+    }
+  }
+});
+
+db.createCollection("workouts", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["id", "user_id", "date", "exercises"],
+      properties: {
+        id: { bsonType: "int" },
+        user_id: { bsonType: "int" },
+        date: { bsonType: "date" },
+        exercises: {
+          bsonType: "array",
+          minItems: 1,
+          items: {
+            bsonType: "object",
+            required: ["exercise_id", "exercise_name", "order"],
+            properties: {
+              exercise_id: { bsonType: "int" },
+              exercise_name: { bsonType: "string" },
+              order: { bsonType: "int" }
+            }
           }
         }
       }
     }
   }
-};
+});
 
-if (!db.getCollectionNames().includes('users')) db.createCollection('users');
-if (!db.getCollectionNames().includes('counters')) db.createCollection('counters');
-if (!db.getCollectionNames().includes('recipes')) {
-  db.createCollection('recipes', { validator: recipeValidator, validationLevel: 'strict' });
-} else {
-  db.runCommand({ collMod: 'recipes', validator: recipeValidator, validationLevel: 'strict' });
-}
+db.createCollection("counters");
+db.counters.insertMany([
+  { _id: "user_id", seq: 0 },
+  { _id: "exercise_id", seq: 0 },
+  { _id: "workout_id", seq: 0 }
+]);
 
-db.users.createIndex({ id: 1 }, { unique: true });
+// Индексы
 db.users.createIndex({ login: 1 }, { unique: true });
-db.users.createIndex({ full_name_lc: 1 });
-db.users.createIndex({ 'auth_tokens.token': 1 });
+db.exercises.createIndex({ name: 1 }, { unique: true });
+db.workouts.createIndex({ user_id: 1, date: -1 });
 
-db.recipes.createIndex({ id: 1 }, { unique: true });
-db.recipes.createIndex({ author_id: 1 });
-db.recipes.createIndex({ title_lc: 1 });
+print("✅ DB schema created");

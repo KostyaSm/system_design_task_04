@@ -1,216 +1,192 @@
-import uuid
+import pytest
+import json
 
+@pytest.mark.userver_fixture
+async def test_register_user(service_client, mongodb):
+    response = await service_client.post('/api/v1/auth/register', json={
+        'login': 'new_user',
+        'first_name': 'Test',
+        'last_name': 'User',
+        'password': 'test123',
+        'email': 'test@example.com'
+    })
+    assert response.status_code == 201
+    data = response.json()
+    assert data['login'] == 'new_user'
+    assert 'id' in data
 
-def unique_value(prefix='x'):
-    return f"{prefix}-{uuid.uuid4().hex[:8]}"
+@pytest.mark.userver_fixture
+async def test_register_duplicate_login(service_client, mongodb):
+    await mongodb.users.insert_one({
+        'id': 100, 'login': 'existing', 'first_name': 'X', 'last_name': 'Y',
+        'password_hash': 'pw$test123', 'created_at': '2024-01-01T00:00:00Z'
+    })
+    response = await service_client.post('/api/v1/auth/register', json={
+        'login': 'existing',
+        'first_name': 'Test',
+        'last_name': 'User',
+        'password': 'test123'
+    })
+    assert response.status_code == 409
 
+@pytest.mark.userver_fixture
+async def test_login_success(service_client, mongodb):
+    await mongodb.users.insert_one({
+        'id': 1, 'login': 'testuser', 'first_name': 'Test', 'last_name': 'User',
+        'password_hash': 'pw$test123', 'created_at': '2024-01-01T00:00:00Z'
+    })
+    response = await service_client.post('/api/v1/auth/login', json={
+        'login': 'testuser',
+        'password': 'test123'
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert 'token' in data
+    assert data['user_id'] == 1
 
-async def register_user(
-    service_client,
-    login='chef1',
-    first_name='Ivan',
-    last_name='Petrov',
-    password='secret',
-):
-    response = await service_client.post(
-        '/api/v1/auth/register',
-        json={
-            'login': login,
-            'first_name': first_name,
-            'last_name': last_name,
-            'password': password,
-        },
-    )
-    return response
+@pytest.mark.userver_fixture
+async def test_login_invalid_password(service_client, mongodb):
+    await mongodb.users.insert_one({
+        'id': 1, 'login': 'testuser', 'first_name': 'Test', 'last_name': 'User',
+        'password_hash': 'pw$correct', 'created_at': '2024-01-01T00:00:00Z'
+    })
+    response = await service_client.post('/api/v1/auth/login', json={
+        'login': 'testuser',
+        'password': 'wrong'
+    })
+    assert response.status_code == 401
 
+@pytest.mark.userver_fixture
+async def test_user_by_login(service_client, mongodb):
+    await mongodb.users.insert_one({
+        'id': 42, 'login': 'findme', 'first_name': 'Find', 'last_name': 'Me',
+        'email': 'find@example.com', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'
+    })
+    response = await service_client.get('/api/v1/users/by-login', params={'login': 'findme'})
+    assert response.status_code == 200
+    data = response.json()
+    assert data['id'] == 42
+    assert data['first_name'] == 'Find'
 
-async def login_user(service_client, login='chef1', password='secret'):
-    response = await service_client.post(
-        '/api/v1/auth/login',
-        json={'login': login, 'password': password},
-    )
-    return response
+@pytest.mark.userver_fixture
+async def test_user_by_login_not_found(service_client, mongodb):
+    response = await service_client.get('/api/v1/users/by-login', params={'login': 'nonexistent'})
+    assert response.status_code == 404
 
+@pytest.mark.userver_fixture
+async def test_user_search_by_mask(service_client, mongodb):
+    await mongodb.users.insert_many([
+        {'id': 1, 'login': 'u1', 'first_name': 'Анна', 'last_name': 'Иванова', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 2, 'login': 'u2', 'first_name': 'Борис', 'last_name': 'Ананьев', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 3, 'login': 'u3', 'first_name': 'Виктор', 'last_name': 'Петров', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'},
+    ])
+    response = await service_client.get('/api/v1/users/search', params={'mask': 'ан'})
+    assert response.status_code == 200
+    data = response.json()
+    assert 'users' in data
+    assert len(data['users']) >= 2
 
-async def create_recipe(service_client, token, title='Borscht', description='Classic soup'):
-    return await service_client.post(
-        '/api/v1/recipes',
-        headers={'Authorization': f'Bearer {token}'},
-        json={'title': title, 'description': description},
-    )
+@pytest.mark.userver_fixture
+async def test_create_exercise(service_client, mongodb):
+    response = await service_client.post('/api/v1/exercises', json={
+        'name': 'Новое упражнение',
+        'category': 'strength',
+        'difficulty': 'beginner',
+        'description': 'Описание',
+        'muscle_groups': ['chest', 'triceps']
+    })
+    assert response.status_code == 201
+    data = response.json()
+    assert data['name'] == 'Новое упражнение'
+    assert data['category'] == 'strength'
 
+@pytest.mark.userver_fixture
+async def test_list_exercises(service_client, mongodb):
+    await mongodb.exercises.insert_many([
+        {'id': 1, 'name': 'Ex1', 'category': 'strength', 'difficulty': 'beginner', 'is_public': True, 'created_by': 1, 'muscle_groups': [], 'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 2, 'name': 'Ex2', 'category': 'cardio', 'difficulty': 'intermediate', 'is_public': True, 'created_by': 1, 'muscle_groups': [], 'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 3, 'name': 'Ex3', 'category': 'strength', 'difficulty': 'advanced', 'is_public': False, 'created_by': 1, 'muscle_groups': [], 'created_at': '2024-01-01T00:00:00Z'},
+    ])
+    response = await service_client.get('/api/v1/exercises', params={'category': 'strength'})
+    assert response.status_code == 200
+    data = response.json()
+    assert 'exercises' in data
+    assert len(data['exercises']) >= 1
+    assert all(ex['category'] == 'strength' for ex in data['exercises'])
 
-async def test_register_and_find_user(service_client):
-    login = unique_value('chef')
-    response = await register_user(service_client, login=login)
-    assert response.status == 201
+@pytest.mark.userver_fixture
+async def test_create_workout(service_client, mongodb):
+    await mongodb.users.insert_one({'id': 1, 'login': 'wuser', 'first_name': 'W', 'last_name': 'U', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'})
+    await mongodb.exercises.insert_one({'id': 10, 'name': 'Pushup', 'category': 'strength', 'difficulty': 'beginner', 'is_public': True, 'created_by': 1, 'muscle_groups': [], 'created_at': '2024-01-01T00:00:00Z'})
+    
+    response = await service_client.post('/api/v1/workouts', json={
+        'title': 'Morning workout',
+        'date': '2024-06-01T08:00:00Z',
+        'duration_seconds': 1800,
+        'notes': 'Felt great',
+        'exercises': [
+            {'exercise_id': 10, 'exercise_name': 'Pushup', 'sets': 3, 'reps': 15, 'order': 0}
+        ]
+    }, params={'user_id': 1})
+    assert response.status_code == 201
+    data = response.json()
+    assert data['title'] == 'Morning workout'
+    assert 'id' in data
 
-    response = await service_client.get('/api/v1/users/by-login', params={'login': login})
-    assert response.status == 200
-    assert response.json()['login'] == login
+@pytest.mark.userver_fixture
+async def test_add_exercise_to_workout(service_client, mongodb):
+    await mongodb.users.insert_one({'id': 1, 'login': 'wuser', 'first_name': 'W', 'last_name': 'U', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'})
+    workout_id = 999
+    await mongodb.workouts.insert_one({
+        'id': workout_id, 'user_id': 1, 'title': 'Test', 'date': '2024-06-01T08:00:00Z',
+        'exercises': [], 'created_at': '2024-01-01T00:00:00Z'
+    })
+    
+    response = await service_client.post(f'/api/v1/workouts/{workout_id}/exercises', json={
+        'exercise_id': 5,
+        'exercise_name': 'Squat',
+        'sets': 4,
+        'reps': 10,
+        'weight_kg': 80,
+        'order': 0
+    })
+    assert response.status_code == 200
+    updated = await mongodb.workouts.find_one({'id': workout_id})
+    assert len(updated['exercises']) == 1
+    assert updated['exercises'][0]['exercise_name'] == 'Squat'
 
+@pytest.mark.userver_fixture
+async def test_get_user_workouts(service_client, mongodb):
+    await mongodb.users.insert_one({'id': 5, 'login': 'wuser5', 'first_name': 'W5', 'last_name': 'U5', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'})
+    await mongodb.workouts.insert_many([
+        {'id': 101, 'user_id': 5, 'title': 'Workout A', 'date': '2024-05-01T08:00:00Z', 'exercises': [], 'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 102, 'user_id': 5, 'title': 'Workout B', 'date': '2024-05-15T08:00:00Z', 'exercises': [], 'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 103, 'user_id': 99, 'title': 'Other user', 'date': '2024-05-10T08:00:00Z', 'exercises': [], 'created_at': '2024-01-01T00:00:00Z'},
+    ])
+    
+    response = await service_client.get('/api/v1/users/me/workouts', params={'user_id': 5, 'limit': 10})
+    assert response.status_code == 200
+    data = response.json()
+    assert 'workouts' in data
+    assert len(data['workouts']) == 2
+    assert all(w['user_id'] == 5 for w in data['workouts'])
 
-async def test_register_duplicate_user_returns_conflict(service_client):
-    login = unique_value('chef')
-    first = await register_user(service_client, login=login)
-    second = await register_user(service_client, login=login)
-
-    assert first.status == 201
-    assert second.status == 409
-
-
-async def test_login_wrong_password_returns_unauthorized(service_client):
-    login = unique_value('chef')
-    response = await register_user(service_client, login=login)
-    assert response.status == 201
-
-    response = await login_user(service_client, login=login, password='wrong-password')
-    assert response.status == 401
-
-
-async def test_user_search_by_mask(service_client):
-    login = unique_value('chef')
-    response = await register_user(service_client, login=login, first_name='Anna', last_name='Ivanova')
-    assert response.status == 201
-
-    response = await service_client.get('/api/v1/users/search', params={'mask': 'anna iva'})
-    assert response.status == 200
-    assert len(response.json()) >= 1
-    assert any(user['login'] == login for user in response.json())
-
-
-async def test_create_recipe_requires_auth(service_client):
-    response = await service_client.post(
-        '/api/v1/recipes',
-        json={'title': 'Pasta', 'description': 'Quick pasta'},
-    )
-    assert response.status == 401
-
-
-async def test_create_recipe_and_search(service_client):
-    login = unique_value('chef')
-    title = unique_value('borscht')
-    response = await register_user(service_client, login=login)
-    assert response.status == 201
-
-    response = await login_user(service_client, login=login)
-    assert response.status == 200
-    token = response.json()['token']
-
-    create_response = await create_recipe(service_client, token, title=title)
-    assert create_response.status == 201
-    recipe_id = create_response.json()['id']
-
-    list_response = await service_client.get('/api/v1/recipes', params={'title': title[:6]})
-    assert list_response.status == 200
-    assert any(recipe['id'] == recipe_id for recipe in list_response.json())
-
-
-async def test_add_ingredient_and_read_back(service_client):
-    login = unique_value('chef')
-    response = await register_user(service_client, login=login)
-    assert response.status == 201
-
-    response = await login_user(service_client, login=login)
-    assert response.status == 200
-    token = response.json()['token']
-
-    recipe_response = await create_recipe(service_client, token, title=unique_value('salad'), description='Fresh salad')
-    assert recipe_response.status == 201
-    recipe_id = recipe_response.json()['id']
-
-    ingredient_response = await service_client.post(
-        f'/api/v1/recipes/{recipe_id}/ingredients',
-        headers={'Authorization': f'Bearer {token}'},
-        json={'name': 'Tomato', 'amount': '2 pcs'},
-    )
-    assert ingredient_response.status == 201
-
-    list_response = await service_client.get(f'/api/v1/recipes/{recipe_id}/ingredients')
-    assert list_response.status == 200
-    assert list_response.json()[0]['name'] == 'Tomato'
-
-
-async def test_add_ingredient_forbidden_for_non_author(service_client):
-    author_login = unique_value('author')
-    response = await register_user(service_client, login=author_login)
-    assert response.status == 201
-    response = await login_user(service_client, login=author_login)
-    assert response.status == 200
-    author_token = response.json()['token']
-
-    other_login = unique_value('other')
-    response = await register_user(service_client, login=other_login, first_name='Petr', last_name='Sidorov')
-    assert response.status == 201
-    response = await login_user(service_client, login=other_login)
-    assert response.status == 200
-    other_token = response.json()['token']
-
-    recipe_response = await create_recipe(service_client, author_token, title=unique_value('soup'), description='Hot soup')
-    assert recipe_response.status == 201
-    recipe_id = recipe_response.json()['id']
-
-    response = await service_client.post(
-        f'/api/v1/recipes/{recipe_id}/ingredients',
-        headers={'Authorization': f'Bearer {other_token}'},
-        json={'name': 'Salt', 'amount': '1 tsp'},
-    )
-    assert response.status == 403
-
-
-async def test_invalid_recipe_id_returns_bad_request(service_client):
-    response = await service_client.get('/api/v1/recipes/not-an-int/ingredients')
-    assert response.status == 400
-
-
-async def test_favorites_require_auth(service_client):
-    response = await service_client.get('/api/v1/users/me/favorites')
-    assert response.status == 401
-
-
-async def test_add_to_favorites_and_duplicate_conflict(service_client):
-    login = unique_value('chef')
-    response = await register_user(service_client, login=login)
-    assert response.status == 201
-    response = await login_user(service_client, login=login)
-    assert response.status == 200
-    token = response.json()['token']
-
-    recipe_response = await create_recipe(service_client, token, title=unique_value('pasta'), description='Quick pasta')
-    assert recipe_response.status == 201
-    recipe_id = recipe_response.json()['id']
-
-    first = await service_client.post(
-        f'/api/v1/users/me/favorites/{recipe_id}',
-        headers={'Authorization': f'Bearer {token}'},
-    )
-    second = await service_client.post(
-        f'/api/v1/users/me/favorites/{recipe_id}',
-        headers={'Authorization': f'Bearer {token}'},
-    )
-
-    assert first.status == 201
-    assert second.status == 409
-
-    list_response = await service_client.get(
-        '/api/v1/users/me/favorites',
-        headers={'Authorization': f'Bearer {token}'},
-    )
-    assert list_response.status == 200
-    assert len(list_response.json()) == 1
-    assert list_response.json()[0]['id'] == recipe_id
-
-
-async def test_add_missing_recipe_to_favorites_returns_not_found(service_client):
-    login = unique_value('chef')
-    response = await register_user(service_client, login=login)
-    assert response.status == 201
-    response = await login_user(service_client, login=login)
-    assert response.status == 200
-    token = response.json()['token']
-
-    response = await service_client.post(
-        '/api/v1/users/me/favorites/999',
-        headers={'Authorization': f'Bearer {token}'},
-    )
-    assert response.status == 404
+@pytest.mark.userver_fixture
+async def test_workout_statistics(service_client, mongodb):
+    await mongodb.users.insert_one({'id': 7, 'login': 'wuser7', 'first_name': 'W7', 'last_name': 'U7', 'password_hash': 'pw$x', 'created_at': '2024-01-01T00:00:00Z'})
+    await mongodb.workouts.insert_many([
+        {'id': 201, 'user_id': 7, 'title': 'W1', 'date': '2024-03-01T08:00:00Z', 'duration_seconds': 3600,
+         'exercises': [{'exercise_id': 1, 'exercise_name': 'Bench', 'sets': 3, 'reps': 10, 'weight_kg': 60, 'order': 0}],
+         'created_at': '2024-01-01T00:00:00Z'},
+        {'id': 202, 'user_id': 7, 'title': 'W2', 'date': '2024-04-01T08:00:00Z', 'duration_seconds': 2400,
+         'exercises': [{'exercise_id': 2, 'exercise_name': 'Squat', 'sets': 4, 'reps': 8, 'weight_kg': 100, 'order': 0}],
+         'created_at': '2024-01-01T00:00:00Z'},
+    ])
+    
+    response = await service_client.get('/api/v1/workouts/statistics', params={
+        'user_id': 7, 'from': '2024-01-01', 'to': '2024-12-31'
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data['total_workouts'] >= 2
+    assert 'total_volume_kg' in data

@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
         .Append<userver::clients::dns::Component>()
         .Append<storage::FitnessStorage>("fitness-storage")
         .Append<handlers::AuthRegisterHandler>("handler-auth-register")
+        .Append<handlers::AuthLoginHandler>("handler-auth-login")
         .Append<handlers::UserByLoginHandler>("handler-user-by-login")
         .Append<handlers::UserSearchHandler>("handler-user-search")
         .Append<handlers::ExerciseCreateHandler>("handler-exercises-create")
